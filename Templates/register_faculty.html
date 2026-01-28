@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Register Faculty{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-chalkboard-teacher"></i> Register New Faculty</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('register_faculty') }}" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="emp_id" class="form-label">Employee ID *</label>
+                                <input type="text" class="form-control" id="emp_id" 
+                                       name="emp_id" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Full Name *</label>
+                                <input type="text" class="form-control" id="name" 
+                                       name="name" required>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="department" class="form-label">Department *</label>
+                                <select class="form-select" id="department" name="department" required>
+                                    <option value="">Select Department</option>
+                                    <option value="Computer Science">Computer Science</option>
+                                    <option value="Information Technology">Information Technology</option>
+                                    <option value="Electronics">Electronics</option>
+                                    <option value="Electrical">Electrical</option>
+                                    <option value="Mechanical">Mechanical</option>
+                                    <option value="Civil">Civil</option>
+                                    <option value="Mathematics">Mathematics</option>
+                                    <option value="Physics">Physics</option>
+                                    <option value="Chemistry">Chemistry</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="mobile" class="form-label">Mobile Number *</label>
+                                <input type="tel" class="form-control" id="mobile" 
+                                       name="mobile" pattern="[0-9]{10}" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="photo" class="form-label">Photo</label>
+                        <input type="file" class="form-control" id="photo" 
+                               name="photo" accept="image/*">
+                        <small class="text-muted">Accepted formats: JPG, PNG, JPEG</small>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-check"></i> Register Faculty
+                        </button>
+                        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

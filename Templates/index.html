@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Attendance System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 text-center text-white mb-5">
+        <h1 class="display-3 fw-bold mb-3">
+            <i class="fas fa-camera"></i> Face Recognition Attendance System
+        </h1>
+        <p class="lead">Automated attendance management using AI-powered face recognition</p>
+    </div>
+</div>
+
+
+<div class="row mt-5">
+    <div class="col-md-12 text-center">
+        {% if session.admin_logged_in %}
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-primary btn-lg me-3">
+            <i class="fas fa-tachometer-alt"></i> Go to Dashboard
+        </a>
+        {% else %}
+        <a href="{{ url_for('admin_login') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-sign-in-alt"></i> Admin Login
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-info-circle"></i> How It Works</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="p-3">
+                            <i class="fas fa-user-plus fa-3x text-primary mb-3"></i>
+                            <h5>1. Register</h5>
+                            <p>Register students and faculty with face capture</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="p-3">
+                            <i class="fas fa-camera fa-3x text-success mb-3"></i>
+                            <h5>2. Capture</h5>
+                            <p>System captures and stores face embeddings</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="p-3">
+                            <i class="fas fa-check-circle fa-3x text-warning mb-3"></i>
+                            <h5>3. Recognize</h5>
+                            <p>AI recognizes faces during attendance</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="p-3">
+                            <i class="fas fa-file-alt fa-3x text-danger mb-3"></i>
+                            <h5>4. Report</h5>
+                            <p>Generate detailed attendance reports</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        transition: all 0.3s;
+    }
+    .card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+</style>
+{% endblock %}
+
+

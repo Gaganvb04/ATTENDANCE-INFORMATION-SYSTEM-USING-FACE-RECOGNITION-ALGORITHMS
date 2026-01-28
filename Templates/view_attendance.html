@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}View Attendance{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0"><i class="fas fa-list"></i> View Attendance Records</h3>
+                    <form method="GET" class="d-flex gap-2">
+                        <input type="date" class="form-control" name="date" 
+                               value="{{ date }}">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Filter
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if records %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Roll Number</th>
+                                <th>Student Name</th>
+                                <th>Subject</th>
+                                <th>Period</th>
+                                <th>Status</th>
+                                <th>Time</th>
+                                <th>Confidence</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in records %}
+                            <tr>
+                                <td><strong>{{ record[0] }}</strong></td>
+                                <td>{{ record[1] }}</td>
+                                <td>{{ record[2] }}</td>
+                                <td>Period {{ record[3] }}</td>
+                                <td>
+                                    {% if record[4] == 'present' %}
+                                    <span class="badge bg-success">Present</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Absent</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ record[5].strftime('%I:%M %p') if record[5] else 'N/A' }}</td>
+                                <td>
+                                    {% if record[6] %}
+                                    <span class="badge bg-info">{{ "%.2f"|format(record[6]) }}</span>
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-3">
+                    <strong>Total Records:</strong> {{ records|length }}
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    No attendance records found for the selected date.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Set max date to today and default value
+    document.addEventListener('DOMContentLoaded', function() {
+        let dateInput = document.querySelector('input[type="date"]');
+        let today = new Date().toISOString().split('T')[0];
+        dateInput.setAttribute('max', today);
+        if (!dateInput.value) {
+            dateInput.value = today;
+        }
+    });
+</script>
+{% endblock %}

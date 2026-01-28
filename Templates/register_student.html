@@ -1,0 +1,370 @@
+{% extends "base.html" %}
+
+{% block title %}Register Student{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-user-graduate"></i> Register New Student</h3>
+            </div>
+            <div class="card-body">
+                <form id="studentForm" method="POST" action="{{ url_for('register_student') }}">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="mb-3">Personal Information</h5>
+                            
+                            <div class="mb-3">
+                                <label for="roll_number" class="form-label">Roll Number *</label>
+                                <input type="text" class="form-control" id="roll_number" 
+                                       name="roll_number" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Full Name *</label>
+                                <input type="text" class="form-control" id="name" 
+                                       name="name" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="branch" class="form-label">Branch *</label>
+                                <select class="form-select" id="branch" name="branch" required>
+                                    <option value="">Select Branch</option>
+                                    <option value="Computer Science">Computer Science</option>
+                                    <option value="Information Technology">Information Technology</option>
+                                    <option value="Electronics">Electronics</option>
+                                    <option value="Electrical">Electrical</option>
+                                    <option value="Mechanical">Mechanical</option>
+                                    <option value="Civil">Civil</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="dob" class="form-label">Date of Birth *</label>
+                                <input type="date" class="form-control" id="dob" 
+                                       name="dob" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="mobile" class="form-label">Mobile Number *</label>
+                                <input type="tel" class="form-control" id="mobile" 
+                                       name="mobile" pattern="[0-9]{10}" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email *</label>
+                                <input type="email" class="form-control" id="email" 
+                                       name="email" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="address" class="form-label">Address</label>
+                                <textarea class="form-control" id="address" name="address" 
+                                          rows="3"></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5 class="mb-3">Face Capture</h5>
+                            
+                            <!-- Camera Status Alert -->
+                            <div id="cameraStatus" class="alert alert-info" style="display: none;">
+                                <i class="fas fa-info-circle"></i> <span id="statusMessage"></span>
+                            </div>
+                            
+                            <!-- Video Container -->
+                            <div class="video-container mb-3" style="position: relative; max-width: 640px; margin: 0 auto;">
+                                <video id="video" autoplay playsinline style="width: 100%; border-radius: 10px; display: none;"></video>
+                                <div id="videoPlaceholder" style="width: 100%; height: 300px; background: #2c3e50; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white;">
+                                    <div class="text-center">
+                                        <i class="fas fa-video fa-3x mb-3"></i>
+                                        <p>Click "Start Camera" to begin</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <canvas id="canvas" style="display:none;"></canvas>
+                            
+                            <!-- Camera Controls -->
+                            <div class="d-grid gap-2 mb-3">
+                                <button type="button" id="startCamera" class="btn btn-info btn-lg">
+                                    <i class="fas fa-video"></i> Start Camera
+                                </button>
+                                <button type="button" id="captureBtn" class="btn btn-warning btn-lg" disabled>
+                                    <i class="fas fa-camera"></i> Capture Face
+                                </button>
+                            </div>
+                            
+                            <!-- Capture Preview -->
+                            <div id="capturePreview" style="display:none;" class="text-center">
+                                <h6>Captured Image:</h6>
+                                <img id="capturedImage" class="img-fluid rounded mb-3" alt="Captured" 
+                                     style="max-width: 100%; border: 3px solid #27ae60;">
+                                <button type="button" id="retakeBtn" class="btn btn-secondary">
+                                    <i class="fas fa-redo"></i> Retake
+                                </button>
+                            </div>
+                            
+                            <input type="hidden" id="face_data" name="face_data">
+                            
+                            <!-- Instructions -->
+                            <div class="alert alert-info mt-3">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Instructions:</strong>
+                                <ul class="mb-0 mt-2">
+                                    <li>Click "Start Camera" to begin</li>
+                                    <li>Position face in center of frame</li>
+                                    <li>Ensure good lighting</li>
+                                    <li>Look directly at camera</li>
+                                    <li>Click "Capture Face" when ready</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <button type="submit" id="submitBtn" class="btn btn-success btn-lg" disabled>
+                                <i class="fas fa-check"></i> Register Student
+                            </button>
+                            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Wait for DOM to be fully loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Page loaded, initializing camera system...');
+    
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const captureBtn = document.getElementById('captureBtn');
+    const startCamera = document.getElementById('startCamera');
+    const retakeBtn = document.getElementById('retakeBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const cameraStatus = document.getElementById('cameraStatus');
+    const statusMessage = document.getElementById('statusMessage');
+    const videoPlaceholder = document.getElementById('videoPlaceholder');
+    const capturePreview = document.getElementById('capturePreview');
+    
+    let stream = null;
+    
+    // Check browser support
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showStatus('Your browser does not support camera access. Please use Chrome, Firefox, or Edge.', 'danger');
+        startCamera.disabled = true;
+        console.error('getUserMedia not supported');
+        return;
+    }
+    
+    console.log('Browser supports camera API');
+    
+    // Function to show status messages
+    function showStatus(message, type = 'info') {
+        console.log('Status:', message);
+        statusMessage.textContent = message;
+        cameraStatus.className = 'alert alert-' + type;
+        cameraStatus.style.display = 'block';
+        
+        if (type === 'success' || type === 'info') {
+            setTimeout(() => {
+                cameraStatus.style.display = 'none';
+            }, 4000);
+        }
+    }
+    
+    // Function to stop camera
+    function stopCamera() {
+        if (stream) {
+            console.log('Stopping camera stream...');
+            stream.getTracks().forEach(track => {
+                track.stop();
+                console.log('Track stopped:', track.kind);
+            });
+            stream = null;
+        }
+    }
+    
+    // Start Camera Button Click
+    startCamera.addEventListener('click', async function() {
+        console.log('Start Camera button clicked');
+        showStatus('Requesting camera permission...', 'info');
+        
+        try {
+            console.log('Requesting camera access...');
+            
+            const constraints = {
+                video: {
+                    width: { ideal: 640 },
+                    height: { ideal: 480 },
+                    facingMode: 'user'
+                },
+                audio: false
+            };
+            
+            stream = await navigator.mediaDevices.getUserMedia(constraints);
+            console.log('Camera access granted!', stream);
+            
+            video.srcObject = stream;
+            videoPlaceholder.style.display = 'none';
+            video.style.display = 'block';
+            
+            // Wait for video to load
+            video.onloadedmetadata = function() {
+                console.log('Video metadata loaded');
+                video.play().then(() => {
+                    console.log('Video playing successfully');
+                    captureBtn.disabled = false;
+                    startCamera.disabled = true;
+                    showStatus('Camera started successfully! Position your face and click Capture.', 'success');
+                }).catch(err => {
+                    console.error('Error playing video:', err);
+                    showStatus('Error playing video: ' + err.message, 'danger');
+                });
+            };
+            
+        } catch (err) {
+            console.error('Camera error:', err);
+            console.error('Error name:', err.name);
+            console.error('Error message:', err.message);
+            
+            let errorMessage = '';
+            
+            switch(err.name) {
+                case 'NotAllowedError':
+                case 'PermissionDeniedError':
+                    errorMessage = 'Camera permission denied. Please click the camera icon in the address bar and allow access.';
+                    break;
+                case 'NotFoundError':
+                case 'DevicesNotFoundError':
+                    errorMessage = 'No camera found. Please connect a camera and refresh the page.';
+                    break;
+                case 'NotReadableError':
+                case 'TrackStartError':
+                    errorMessage = 'Camera is already in use by another application. Please close other apps using the camera.';
+                    break;
+                case 'OverconstrainedError':
+                    errorMessage = 'Camera constraints not supported. Trying with basic settings...';
+                    // Retry with basic constraints
+                    setTimeout(() => retryBasicCamera(), 1000);
+                    return;
+                case 'SecurityError':
+                    errorMessage = 'Camera access blocked by security settings. Make sure you are using http://localhost:5000 or https://';
+                    break;
+                case 'TypeError':
+                    errorMessage = 'Camera API error. Please ensure you are using http://localhost:5000 or https://';
+                    break;
+                default:
+                    errorMessage = 'Error: ' + err.message;
+            }
+            
+            showStatus(errorMessage, 'danger');
+        }
+    });
+    
+    // Retry with basic camera settings
+    async function retryBasicCamera() {
+        try {
+            console.log('Retrying with basic camera settings...');
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = stream;
+            videoPlaceholder.style.display = 'none';
+            video.style.display = 'block';
+            video.play();
+            captureBtn.disabled = false;
+            startCamera.disabled = true;
+            showStatus('Camera started with basic settings!', 'success');
+        } catch (err) {
+            console.error('Retry failed:', err);
+            showStatus('Failed to start camera: ' + err.message, 'danger');
+        }
+    }
+    
+    // Capture Face Button Click
+    captureBtn.addEventListener('click', function() {
+        console.log('Capture button clicked');
+        
+        try {
+            if (!video.videoWidth || !video.videoHeight) {
+                showStatus('Video not ready. Please wait and try again.', 'warning');
+                return;
+            }
+            
+            // Set canvas size to match video
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            console.log('Canvas size:', canvas.width, 'x', canvas.height);
+            
+            // Draw video frame to canvas
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Convert to base64
+            const imageData = canvas.toDataURL('image/jpeg', 0.95);
+            console.log('Image captured, data length:', imageData.length);
+            
+            // Store image data
+            document.getElementById('face_data').value = imageData;
+            document.getElementById('capturedImage').src = imageData;
+            capturePreview.style.display = 'block';
+            
+            // Hide video and stop camera
+            stopCamera();
+            video.style.display = 'none';
+            videoPlaceholder.style.display = 'flex';
+            captureBtn.disabled = true;
+            submitBtn.disabled = false;
+            
+            showStatus('Face captured successfully!', 'success');
+            
+        } catch (err) {
+            console.error('Capture error:', err);
+            showStatus('Error capturing image: ' + err.message, 'danger');
+        }
+    });
+    
+    // Retake Button Click
+    retakeBtn.addEventListener('click', function() {
+        console.log('Retake button clicked');
+        capturePreview.style.display = 'none';
+        videoPlaceholder.style.display = 'flex';
+        startCamera.disabled = false;
+        submitBtn.disabled = true;
+        document.getElementById('face_data').value = '';
+        cameraStatus.style.display = 'none';
+    });
+    
+    // Form Submission
+    document.getElementById('studentForm').addEventListener('submit', function(e) {
+        const faceData = document.getElementById('face_data').value;
+        
+        if (!faceData) {
+            e.preventDefault();
+            showStatus('Please capture a face image before submitting!', 'danger');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return false;
+        }
+        
+        console.log('Form submitted with face data');
+        showStatus('Submitting registration...', 'info');
+    });
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function() {
+        stopCamera();
+    });
+    
+    console.log('Camera system initialized successfully');
+});
+</script>
+{% endblock %}

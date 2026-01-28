@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Students List{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0"><i class="fas fa-users"></i> All Students</h3>
+                    <a href="{{ url_for('register_student') }}" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Add New Student
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <input type="text" id="searchInput" class="form-control" 
+                           placeholder="Search by roll number or name...">
+                </div>
+                
+                {% if students %}
+                <div class="table-responsive">
+                    <table class="table table-hover" id="studentsTable">
+                        <thead>
+                            <tr>
+                                <th>Roll Number</th>
+                                <th>Name</th>
+                                <th>Branch</th>
+                                <th>Mobile</th>
+                                <th>Email</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in students %}
+                            <tr>
+                                <td><strong>{{ student[1] }}</strong></td>
+                                <td>{{ student[2] }}</td>
+                                <td>{{ student[3] }}</td>
+                                <td>{{ student[4] }}</td>
+                                <td>{{ student[5] }}</td>
+                                <td>
+                                    <a href="{{ url_for('student_report', student_id=student[0]) }}" 
+                                       class="btn btn-sm btn-info">
+                                        <i class="fas fa-chart-bar"></i> Report
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-3">
+                    <strong>Total Students:</strong>
+                    <span id="totalCount">{{ students|length }}</span>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    No students registered yet. Click "Add New Student" to register.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // FIX: Safe Jinja value for JS
+    const totalStudents = parseInt("{{ students|length }}");
+
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        let searchValue = this.value.toLowerCase();
+        let rows = document.querySelectorAll('#studentsTable tbody tr');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            let text = row.textContent.toLowerCase();
+            if (text.includes(searchValue)) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // FIXED: No Jinja error inside JS
+        document.getElementById('totalCount').textContent =
+            (searchValue !== '') ? visibleCount : totalStudents;
+    });
+</script>
+{% endblock %}

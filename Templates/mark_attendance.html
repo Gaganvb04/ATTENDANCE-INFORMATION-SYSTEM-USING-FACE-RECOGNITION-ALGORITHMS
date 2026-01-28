@@ -1,0 +1,382 @@
+{% extends "base.html" %}
+
+{% block title %}Mark Attendance{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-camera"></i> Mark Attendance - Multi-Face Recognition</h3>
+                <small class="text-white">Can recognize multiple students simultaneously</small>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h5 class="mb-3">Session Details</h5>
+                        
+                        <div class="mb-3">
+                            <label for="faculty_id" class="form-label">Faculty *</label>
+                            <select class="form-select" id="faculty_id" required>
+                                <option value="">Select Faculty</option>
+                                {% for faculty in faculty_list %}
+                                <option value="{{ faculty[0] }}">{{ faculty[1] }} ({{ faculty[2] }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="subject" class="form-label">Subject *</label>
+                            <input type="text" class="form-control" id="subject" 
+                                   placeholder="e.g., Data Structures" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="period" class="form-label">Period Number *</label>
+                            <select class="form-select" id="period" required>
+                                <option value="">Select Period</option>
+                                <option value="1">Period 1</option>
+                                <option value="2">Period 2</option>
+                                <option value="3">Period 3</option>
+                                <option value="4">Period 4</option>
+                                <option value="5">Period 5</option>
+                                <option value="6">Period 6</option>
+                                <option value="7">Period 7</option>
+                                <option value="8">Period 8</option>
+                            </select>
+                        </div>
+                        
+                        <div id="sessionInfo" class="alert alert-info" style="display:none;">
+                            <h6>Current Session:</h6>
+                            <p class="mb-1"><strong>Faculty:</strong> <span id="infoFaculty"></span></p>
+                            <p class="mb-1"><strong>Subject:</strong> <span id="infoSubject"></span></p>
+                            <p class="mb-0"><strong>Period:</strong> <span id="infoPeriod"></span></p>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="button" id="startSession" class="btn btn-primary btn-lg">
+                                <i class="fas fa-play"></i> Start Session
+                            </button>
+                            <button type="button" id="endSession" class="btn btn-danger btn-lg" style="display:none;">
+                                <i class="fas fa-stop"></i> End Session & Mark Absent
+                            </button>
+                        </div>
+
+                        <div id="sessionStats" class="alert alert-success mt-3" style="display:none;">
+                            <h6>Session Statistics:</h6>
+                            <p class="mb-1"><strong>Total Marked:</strong> <span id="totalMarked">0</span></p>
+                            <p class="mb-0"><strong>Faces Detected:</strong> <span id="facesDetected">0</span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-8">
+                        <div id="cameraSection" style="display:none;">
+                            <h5 class="mb-3">Face Recognition</h5>
+                                                        
+                            <div class="video-container mb-3">
+                                <video id="video" autoplay></video>
+                            </div>
+                            
+                            <canvas id="canvas" style="display:none;"></canvas>
+                            
+                            <div class="d-grid gap-2 mb-3">
+                                <button type="button" id="recognizeBtn" class="btn btn-success btn-lg">
+                                    <i class="fas fa-user-check"></i> Recognize All Faces & Mark Present
+                                </button>
+                                <button type="button" id="stopCamera" class="btn btn-secondary">
+                                    <i class="fas fa-video-slash"></i> Stop Camera (Don't End Session)
+                                </button>
+                            </div>
+                            
+                            <div id="recognitionResult" class="alert" style="display:none;"></div>
+                            
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-list"></i> Attendance Log (Today - This Period)
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div id="attendanceLog" style="max-height: 400px; overflow-y: auto;">
+                                        <p class="text-muted">No attendance marked yet.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="initialMessage" class="text-center text-muted mt-5">
+                            <i class="fas fa-arrow-left fa-3x mb-3"></i>
+                            <h5>Fill session details and click "Start Session" to begin</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let video = document.getElementById('video');
+    let canvas = document.getElementById('canvas');
+    let stream = null;
+    let sessionActive = false;
+    let totalMarkedCount = 0;
+    let currentSessionData = {};
+    
+    // Show instructions on page load
+    window.addEventListener('load', function() {
+        let instructionsModal = new bootstrap.Modal(document.getElementById('instructionsModal'));
+        instructionsModal.show();
+    });
+    
+    document.getElementById('startSession').addEventListener('click', function() {
+        let faculty = document.getElementById('faculty_id');
+        let subject = document.getElementById('subject');
+        let period = document.getElementById('period');
+        
+        if (!faculty.value || !subject.value || !period.value) {
+            alert('Please fill all session details!');
+            return;
+        }
+        
+        // Store session data
+        currentSessionData = {
+            faculty_id: faculty.value,
+            subject: subject.value,
+            period: period.value
+        };
+        
+        // Update session info
+        document.getElementById('infoFaculty').textContent = faculty.options[faculty.selectedIndex].text;
+        document.getElementById('infoSubject').textContent = subject.value;
+        document.getElementById('infoPeriod').textContent = 'Period ' + period.value;
+        document.getElementById('sessionInfo').style.display = 'block';
+        document.getElementById('sessionStats').style.display = 'block';
+        
+        // Disable session inputs
+        faculty.disabled = true;
+        subject.disabled = true;
+        period.disabled = true;
+        this.style.display = 'none';
+        document.getElementById('endSession').style.display = 'block';
+        
+        // Show camera section
+        document.getElementById('cameraSection').style.display = 'block';
+        document.getElementById('initialMessage').style.display = 'none';
+        
+        // Reset counter
+        totalMarkedCount = 0;
+        document.getElementById('totalMarked').textContent = '0';
+        
+        sessionActive = true;
+        startCamera();
+    });
+    
+    function startCamera() {
+        navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                width: 1280, 
+                height: 720 
+            } 
+        })
+        .then(function(mediaStream) {
+            stream = mediaStream;
+            video.srcObject = mediaStream;
+            video.play();
+        })
+        .catch(function(err) {
+            alert('Error accessing camera: ' + err.message);
+        });
+    }
+    
+    document.getElementById('recognizeBtn').addEventListener('click', function() {
+        if (!sessionActive) {
+            alert('Please start a session first!');
+            return;
+        }
+        
+        // Capture frame
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        let ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0);
+        
+        let imageData = canvas.toDataURL('image/jpeg');
+        
+        // Show loading
+        let resultDiv = document.getElementById('recognitionResult');
+        resultDiv.className = 'alert alert-info';
+        resultDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Recognizing faces... Please wait...';
+        resultDiv.style.display = 'block';
+        
+        // Send to server
+        fetch('{{ url_for("mark_attendance") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                'faculty_id': currentSessionData.faculty_id,
+                'subject': currentSessionData.subject,
+                'period': currentSessionData.period,
+                'face_data': imageData
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                resultDiv.className = 'alert alert-success';
+                
+                let message = data.message;
+                let details = data.details;
+                
+                // Update statistics
+                document.getElementById('facesDetected').textContent = details.total_faces;
+                
+                // Build detailed message
+                let detailHtml = '<i class="fas fa-check-circle"></i> <strong>' + message + '</strong><br>';
+                
+                if (details.students && details.students.length > 0) {
+                    detailHtml += '<div class="mt-2"><small><strong>Details:</strong></small><ul class="mb-0">';
+                    details.students.forEach(student => {
+                        if (student.status === 'marked') {
+                            detailHtml += `<li>✓ ${student.name} (${student.roll_number}) - Confidence: ${student.confidence.toFixed(2)}</li>`;
+                            totalMarkedCount++;
+                        } else if (student.status === 'already_marked') {
+                            detailHtml += `<li>⚠ ${student.name} (${student.roll_number}) - Already marked</li>`;
+                        }
+                    });
+                    detailHtml += '</ul></div>';
+                }
+                
+                resultDiv.innerHTML = detailHtml;
+                document.getElementById('totalMarked').textContent = totalMarkedCount;
+                
+                // Add to log
+                if (details.students) {
+                    details.students.forEach(student => {
+                        if (student.status === 'marked') {
+                            addToLog(
+                                `${student.name} (${student.roll_number})`,
+                                true,
+                                student.confidence
+                            );
+                        }
+                    });
+                }
+                
+            } else {
+                resultDiv.className = 'alert alert-warning';
+                resultDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ' + data.message;
+                
+                if (data.details) {
+                    document.getElementById('facesDetected').textContent = data.details.total_faces || 0;
+                }
+            }
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                resultDiv.style.display = 'none';
+            }, 5000);
+        })
+        .catch(error => {
+            resultDiv.className = 'alert alert-danger';
+            resultDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error: ' + error;
+        });
+    });
+    
+    function addToLog(studentInfo, success, confidence) {
+        let logDiv = document.getElementById('attendanceLog');
+        let time = new Date().toLocaleTimeString();
+        let icon = success ? '<i class="fas fa-check-circle text-success"></i>' : 
+                           '<i class="fas fa-times-circle text-danger"></i>';
+        
+        if (logDiv.querySelector('.text-muted')) {
+            logDiv.innerHTML = '';
+        }
+        
+        let entry = document.createElement('div');
+        entry.className = 'border-bottom pb-2 mb-2';
+        let confidenceText = confidence ? ` (Confidence: ${confidence.toFixed(2)})` : '';
+        entry.innerHTML = `<small>${time}</small> ${icon} ${studentInfo}${confidenceText}`;
+        logDiv.insertBefore(entry, logDiv.firstChild);
+    }
+    
+    document.getElementById('stopCamera').addEventListener('click', function() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+        video.srcObject = null;
+        
+        alert('Camera stopped. Session is still active. Click "End Session" to mark remaining students as absent.');
+    });
+    
+    document.getElementById('endSession').addEventListener('click', function() {
+        if (!confirm('Are you sure? This will mark all remaining students as ABSENT and end the session.')) {
+            return;
+        }
+        
+        // Stop camera
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+        
+        // Send request to mark absent students
+        let resultDiv = document.getElementById('recognitionResult');
+        resultDiv.className = 'alert alert-info';
+        resultDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Ending session and marking absent students...';
+        resultDiv.style.display = 'block';
+        
+        fetch('{{ url_for("end_session") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams(currentSessionData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                resultDiv.className = 'alert alert-success';
+                resultDiv.innerHTML = '<i class="fas fa-check-circle"></i> <strong>' + data.message + '</strong>';
+                
+                addToLog(`Session ended - ${data.absent_count} student(s) marked absent`, true);
+                
+                // Reset form after 3 seconds
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000);
+            } else {
+                resultDiv.className = 'alert alert-danger';
+                resultDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ' + data.message;
+            }
+        })
+        .catch(error => {
+            resultDiv.className = 'alert alert-danger';
+            resultDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error: ' + error;
+        });
+    });
+</script>
+
+<style>
+    .video-container {
+        border: 3px solid #3498db;
+    }
+    
+    #attendanceLog {
+        font-size: 0.9rem;
+    }
+    
+    #attendanceLog .border-bottom:last-child {
+        border-bottom: none !important;
+    }
+    
+    .alert ul {
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
