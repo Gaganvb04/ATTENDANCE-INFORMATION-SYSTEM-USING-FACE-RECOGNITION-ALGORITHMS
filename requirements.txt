@@ -1,5 +1,10 @@
-Flask
-Flask-SQLAlchemy
-mysqlclient
-opencv-python
-insightface
+Flask==3.0.0
+Flask-MySQLdb==2.0.0
+Werkzeug==3.0.1
+numpy
+opencv-python-headless
+onnxruntime
+insightface==0.7.3
+setuptools
+wheel
+gunicorn
